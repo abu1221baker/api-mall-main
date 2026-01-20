@@ -1,0 +1,142 @@
+API Endpoints Documentation
+============================
+
+Base URL: http://localhost:8000
+(Replace with your deployed URL in production)
+
+Authentication: JWT Token required for most endpoints
+Header: Authorization: Bearer <your_access_token>
+
+================================================================================
+
+ACCOUNTS APP
+================================================================================
+
+Authentication & Registration
+------------------------------
+POST   /api/accounts/login/
+       Login and get JWT tokens
+       Body: {"username": "...", "password": "..."}
+       Returns: {"user": {...}, "access": "...", "refresh": "..."}
+
+POST   /api/accounts/profiles/
+       Register a new profile
+       Body: {"username": "...", "email": "...", "password": "...", ...}
+       Returns: {"user": {...}, "access": "...", "refresh": "..."}
+
+Profile Management
+------------------
+GET    /api/accounts/profiles/
+       Get current user's profile (Authenticated)
+       Returns: Current user's profile data
+
+GET    /api/accounts/profiles/<id>/
+       Retrieve profile details (Authenticated, own profile only)
+       Returns: Profile details
+
+PUT    /api/accounts/profiles/<id>/
+       Update profile (Authenticated, own profile only)
+       Body: {"email": "...", "first_name": "...", ...}
+       Returns: Updated profile
+
+DELETE /api/accounts/profiles/<id>/
+       Delete profile (Authenticated, own profile only)
+       Returns: 204 No Content
+
+================================================================================
+
+PRODUCTS APP
+================================================================================
+
+Product Management
+------------------
+GET    /api/products/products/
+       List all products (Authenticated)
+       Returns: Array of all products
+
+POST   /api/products/products/
+       Create a new product (Authenticated)
+       Body: {"name": "...", "price": "...", "stock": ..., ...}
+       Returns: Created product
+
+GET    /api/products/products/<id>/
+       Retrieve product details (Authenticated)
+       Returns: Product details
+
+PUT    /api/products/products/<id>/
+       Update product (Authenticated)
+       Body: {"name": "...", "price": "...", ...}
+       Returns: Updated product
+
+DELETE /api/products/products/<id>/
+       Delete product (Authenticated)
+       Returns: 204 No Content
+
+Order Management
+----------------
+GET    /api/products/orders/
+       List user's orders (Authenticated)
+       Returns: Array of user's orders
+
+POST   /api/products/orders/
+       Create an order (Authenticated)
+       Body: {"product_id": <product_id>}
+       Note: Stock will be automatically decremented
+       Returns: Created order
+
+GET    /api/products/orders/<id>/
+       Retrieve order details (Authenticated)
+       Returns: Order details
+
+PUT    /api/products/orders/<id>/
+       Update order status (Authenticated)
+       Body: {"status": "paid"} (or "shipped", "completed", "cancelled")
+       Returns: Updated order
+
+DELETE /api/products/orders/<id>/
+       Delete (cancel) order (Authenticated)
+       Returns: 204 No Content
+
+Wishlist Management
+-------------------
+GET    /api/products/wishlist/
+       List user's wishlist (Authenticated)
+       Returns: Array of wishlist items
+
+POST   /api/products/wishlist/
+       Add product to wishlist (Authenticated)
+       Body: {"product": <product_id>}
+       Returns: Created wishlist item
+
+GET    /api/products/wishlist/<id>/
+       Retrieve wishlist item details (Authenticated)
+       Returns: Wishlist item details
+
+DELETE /api/products/wishlist/<id>/
+       Remove from wishlist (Authenticated)
+       Returns: 204 No Content
+
+================================================================================
+
+EXAMPLE USAGE
+================================================================================
+
+1. Register a new user:
+   POST http://localhost:8000/api/accounts/profiles/
+   Body: {"username": "john", "email": "john@example.com", "password": "pass123"}
+
+2. Login:
+   POST http://localhost:8000/api/accounts/login/
+   Body: {"username": "john", "password": "pass123"}
+   Save the "access" token from response
+
+3. Get products (with token):
+   GET http://localhost:8000/api/products/products/
+   Header: Authorization: Bearer <your_access_token>
+
+4. Create an order:
+   POST http://localhost:8000/api/products/orders/
+   Header: Authorization: Bearer <your_access_token>
+   Body: {"product_id": 1}
+
+================================================================================

@@ -1,7 +1,7 @@
 API Endpoints Documentation
 ============================
 
-Base URL: http://localhost:8000
+Base URL: https://api-mall-main.onrender.com
 (Replace with your deployed URL in production)
 
 Authentication: JWT Token required for most endpoints

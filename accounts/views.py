@@ -1,29 +1,41 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from .serializer import ProfileSerializer
-from .models import Profile
+from .models import User
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
-# Create your views here.
 
+def serialize_user(user):
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "phone_number": user.phone_number,
+        "address": user.address
+    }
 
 @api_view(['GET', 'POST'])
 def profile_list_create(request):
     if request.method == 'GET':
         if not request.user.is_authenticated:
             return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
-        # Only return current user's profile for privacy
-        profile = Profile.objects.get(id=request.user.id)
-        serializer = ProfileSerializer(profile)
-        return Response(serializer.data)
+        return Response(serialize_user(request.user))
     
     elif request.method == 'POST':
-        serializer = ProfileSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
+        data = request.data
+        try:
+            user = User.objects.create_user(
+                username=data.get('username'),
+                email=data.get('email'),
+                password=data.get('password'),
+                first_name=data.get('first_name', ''),
+                last_name=data.get('last_name', ''),
+                phone_number=data.get('phone_number', ''),
+                address=data.get('address', '')
+            )
             refresh = RefreshToken.for_user(user)
             return Response({
                 "user": {
@@ -34,32 +46,38 @@ def profile_list_create(request):
                 "access": str(refresh.access_token),
                 "refresh": str(refresh)
             }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def profile_detail(request, pk):
-    # Security: Only allow users to access their own profile
-    if pk != request.user.id:
+    if int(pk) != request.user.id:
         return Response({"detail": "You can only access your own profile."}, status=status.HTTP_403_FORBIDDEN)
     
-    profile = get_object_or_404(Profile, pk=pk)
+    user = get_object_or_404(User, pk=pk)
 
     if request.method == 'GET':
-        serializer = ProfileSerializer(profile)
-        return Response(serializer.data)
+        return Response(serialize_user(user))
 
     elif request.method == 'PUT':
-        serializer = ProfileSerializer(profile, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = request.data
+        user.username = data.get('username', user.username)
+        user.email = data.get('email', user.email)
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        user.phone_number = data.get('phone_number', user.phone_number)
+        user.address = data.get('address', user.address)
+        
+        if 'password' in data:
+            user.set_password(data['password'])
+        
+        user.save()
+        return Response(serialize_user(user))
 
     elif request.method == 'DELETE':
-        profile.delete()
+        user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
 
 @api_view(['POST'])
 def login_view(request):
@@ -67,8 +85,8 @@ def login_view(request):
     password = request.data.get('password')
 
     try:
-        user = Profile.objects.get(username=username)
-    except Profile.DoesNotExist:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
     if not user.check_password(password):

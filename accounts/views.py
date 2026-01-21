@@ -32,10 +32,10 @@ def profile_list_create(request):
                 username=data.get('username'),
                 email=data.get('email'),
                 password=data.get('password'),
-                first_name=data.get('first_name', ''),
-                last_name=data.get('last_name', ''),
-                phone_number=data.get('phone_number', ''),
-                address=data.get('address', '')
+                first_name=data.get('first_name'),
+                last_name=data.get('last_name'),
+                phone_number=data.get('phone_number'),
+                address=data.get('address')
             )
             refresh = RefreshToken.for_user(user)
             return Response({
